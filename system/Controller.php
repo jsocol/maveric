@@ -53,10 +53,10 @@ abstract class Controller
 	public function output ()
 	{
 		global $controller, $action;
-		if ( file_exists(PATH."/views/$controller/$action".EXT) ) {
-			include_once PATH.'/views/application/header'.EXT;
-			include_once PATH."/views/$controller/$action".EXT;
-			include_once PATH.'/views/application/footer'.EXT;
+		if ( file_exists(PATH_VIEWS."$controller/$action".EXT) ) {
+			include_once PATH_VIEWS.'application/header'.EXT;
+			include_once PATH_VIEWS."$controller/$action".EXT;
+			include_once PATH_VIEWS.'application/footer'.EXT;
 		} else
 			throw new NoViewException("$controller/$action".EXT);
 	}

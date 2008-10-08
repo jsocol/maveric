@@ -6,6 +6,11 @@ class AutoloadException extends MavericException
 	{
 		parent::__construct($message, $code);
 	}
+	
+	public function message()
+	{
+		return "Could not find class {$this->message}.";
+	}
 }
 
 ?>

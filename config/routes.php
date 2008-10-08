@@ -76,7 +76,7 @@ $routes[':controller/:action.:format'] = array('$1/$2', 'format');
 $routes[':controller/:action/?'] = array('$1/$2');
 
 // /controller (optional trailing slash, defaults to "index" method)
-$routes[':controller/?' = array('$1/index');
+$routes[':controller/?'] = array('$1/index');
 
 /** Route for nothing, ie: $base_url/:
  * Goes to DefaultController->index()

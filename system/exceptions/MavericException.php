@@ -71,7 +71,7 @@ class MavericException extends Exception
 	 */
 	public final static function handler ( Exception $e )
 	{
-		include_once PATH.'/views/application/exception'.EXT;
+		include_once PATH_VIEWS.'application/exception'.EXT;
 		exit();
 	}
 

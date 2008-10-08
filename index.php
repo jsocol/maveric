@@ -7,36 +7,55 @@
  * you should never need to edit this file.
  */
 
-error_reporting(E_ALL ^ E_NOTICE);
-ini_set('memory_limit', '128M');
-ini_set('date.timezone', 'GMT');
-
+// Set up the Maveric environment.
 define('PATH', dirname(__FILE__));
 define('EXT', '.php');
+require_once PATH.'/config/env.php';
 
-require_once PATH.'/system/Debug.php';
+// Set error-reporting level
+define('MAVERIC_ERROR_LEVEL', (MAVERIC_MODE == 'development' ? E_ALL ^ E_NOTICE : 0));
+error_reporting(MAVERIC_ERROR_LEVEL);
 
-require_once PATH.'/config/db.php';
-require_once PATH.'/config/routes.php';
+require_once PATH_CONFIG.'db.php';
+require_once PATH_CONFIG.'routes.php';
 
-require_once PATH.'/system/Controller.php';
-require_once PATH.'/system/AutoLoader.php';
+// Get the version number
+require_once PATH_SYSTEM.'Version.php';
 
+// Include the debugging functions
+require_once PATH_SYSTEM.'Debug.php';
+
+// Set up autoloading
+require_once PATH_SYSTEM.'AutoLoader.php';
+
+// Set up error-handling
 set_exception_handler(array('MavericException', 'handler'));
 
-require_once PATH.'/system/DB.php';
-require_once PATH.'/system/Router.php';
+// Load the things that can't be autoloaded
+require_once PATH_SYSTEM.'Controller.php';
+require_once PATH_SYSTEM.'Router.php';
 
+// Load the database connections
+require_once PATH_SYSTEM.'DB.php';
+
+// Set custom headers
 @session_start();
 @session_regenerate_id();
+header("X-Powered-By: Maveric PHP ".maveric_version()." (PHP/".phpversion().")");
 
+// Transform the requested URI into a meaningful 
+// route.
 list(list($controller, $action), $params) = Router::find($_SERVER['REDIRECT_URL']);
 
+// Create a new instance of the controller
 $ControllerName = ucfirst($controller).'Controller';
 $Controller = new $ControllerName;
 $Controller->params = $params;
 
+// Do the requested action
 $Controller->$action();
+
+// Output to the browser
 $Controller->output();
 
 ?>

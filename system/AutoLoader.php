@@ -48,21 +48,21 @@
 function __autoload ( $Class )
 {
 	if ( preg_match('/Controller$/', $Class) ) {
-		if ( file_exists(PATH.'/controllers/'.$Class.EXT) ) {
-			include_once PATH.'/controllers/'.$Class.EXT;
+		if ( file_exists(PATH_CONTROLLERS.$Class.EXT) ) {
+			include_once PATH_CONTROLLERS.$Class.EXT;
 		}
 	} elseif ( preg_match('/Helper$/', $Class) ) {
-		if ( file_exists(PATH.'/helpers/'.$Class.EXT) ) {
-			include_once PATH.'/helpers/'.$Class.EXT;
+		if ( file_exists(PATH_HELPERS.$Class.EXT) ) {
+			include_once PATH_HELPERS.$Class.EXT;
 		}
 	} elseif ( preg_match('/Exception$/', $Class) ) {
-		if ( file_exists(PATH.'/system/exceptions/'.$Class.EXT) ) {
-			include_once PATH.'/system/exceptions/'.$Class.EXT;
+		if ( file_exists(PATH_SYSTEM.'exceptions/'.$Class.EXT) ) {
+			include_once PATH_SYSTEM.'exceptions/'.$Class.EXT;
 		}
-	} elseif ( file_exists(PATH.'/models/'.$Class.EXT) ) {
-		include_once PATH.'/models/'.$Class.EXT;
+	} elseif ( file_exists(PATH_MODELS.$Class.EXT) ) {
+		include_once PATH_MODELS.$Class.EXT;
 	} else {
-		throw new AutoloadException;
+		throw new AutoloadException($Class);
 	}
 }
 

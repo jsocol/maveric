@@ -23,9 +23,9 @@ div.show {
 
 <p><?php echo $e->type(); ?> thrown at line <strong><?php echo $e->getLine(); ?></strong> in file <strong><?php echo $e->getFile(); ?></strong>.</p>
 
-<?php if ( $msg = $e->message() ) echo "<p>Message:</p>\n<pre>$msg</pre>\n"; ?>
+<?php if ( $msg = $e->message() ) echo "<p>The error was:</p>\n<pre>$msg</pre>\n"; ?>
 
-<p><a href="javascript:;" onclick="var div = document.getElementById('stack-trace'); div.style.className = (div.style.className == 'hide' ? 'show' : 'hide');">Stack trace:</a></p>
+<p><a href="javascript:;" onclick="var div = document.getElementById('stack-trace'); div.className = (div.className == 'hide' ? 'show' : 'hide');">Stack trace:</a></p>
 <div class="hide" id="stack-trace">
 <pre>
 <?php echo $e->getTraceAsString(); ?>
