@@ -64,13 +64,13 @@ $routes = array();
 /** Generic Routes : **/
 
 // /controller/action/id.format
-$routes[':controller/:action/:id.:format'] = array('$1/$2', 'id', 'format');
+$routes[':controller/:action/:id\.:format'] = array('$1/$2', 'id', 'format');
 
 // /controller/action/id (optional trailing slash)
 $routes[':controller/:action/:id/?'] = array('$1/$2', 'id');
 
 // /controller/action.format
-$routes[':controller/:action.:format'] = array('$1/$2', 'format');
+$routes[':controller/:action\.:format'] = array('$1/$2', 'format');
 
 // /controller/action (optional trailing slash)
 $routes[':controller/:action/?'] = array('$1/$2');

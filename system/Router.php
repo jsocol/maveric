@@ -17,8 +17,8 @@
 class Router
 {
 	public static $shorthand = array(
-		':controller' => '([a-zA-Z_][\w_]+)',
-		':action'     => '([a-zA-Z_][\w_]+)',
+		':controller' => '([a-zA-Z_][a-zA-Z0-9_]+)',
+		':action'     => '([a-zA-Z_][a-zA-Z0-9_]+)',
 		':id'         => '(\d+)',
 		':format'     => '([\w]+)'
 	);
@@ -26,11 +26,13 @@ class Router
 	public static function find ( $route )
 	{
 		global $routes, $base_url;
-		$route = preg_replace('#'.$base_url.'\/?#', '', $route, 1);
+		$route = preg_replace('@^'.$base_url.'\/?@', '', $route, 1);
 		
 		foreach ( $routes as $_url => $_route ) {
 			$_map = array_shift($_route);
 			
+			// If this is the default, just do it.
+			// _default should always come last and be a static map.
 			if ( $_url == '_default' ) {
 				$_map = explode('/', $_map);
 				$controller = ucfirst($_map[0]).'Controller';
@@ -39,11 +41,12 @@ class Router
 				return array($_map, array());
 			}
 
+			// Substitute in the shorthand notations.
 			$_url = str_replace(array_keys(self::$shorthand),
 				array_values(self::$shorthand),
 				$_url);
 
-			if ( !preg_match('#^'.$_url.'$#', $route, $_values) ) {
+			if ( !preg_match('@^'.$_url.'$@', $route, $_values) ) {
 				continue;
 			}
 			
