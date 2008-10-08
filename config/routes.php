@@ -44,8 +44,11 @@ $base_url      = ''; // No trailing slash!
  * You don't have to use this standard order. For instance, you could
  * map /<username>/action.format to the UserController like so:
  *
- *   $routes['([\w]+)/:action.:format']
+ *   $routes['([\w]+)/:action\.:format']
  *     = array('user/$2', 'username', 'format');
+ *
+ * As in the last example, be sure to escape any literal "." 
+ * characters with a "\".
  *
  * The default action for any controller is "index", so if you no 
  * action is found, Maveric will try to execute the "index" method of 
