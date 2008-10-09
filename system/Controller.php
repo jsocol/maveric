@@ -86,12 +86,10 @@ abstract class Controller
 			case 'array':
 				$_parts = $_options;
 				if ( !$_parts['controller'] ) {
-					$_controller = get_class($this);
-					$_controller = substr($_controller, 0, strpos($_controller, 'Controller'));
-					$_parts['controller'] = strtolower($_controller);
+					$_parts['controller'] = $GLOBALS['controller'];
 				}
 				if ( !$_parts['action'] ) {
-					$_parts['action'] = 'index';
+					$_parts['action'] = $GLOBALS['action'];
 				}
 				if ( !$_parts['id'] ) {
 					$_parts['id'] = $_parts[0];
@@ -148,12 +146,10 @@ abstract class Controller
 			case 'array':
 				$_parts = $_input;
 				if ( !$_parts['controller'] ) {
-					$_controller = get_class($this);
-					$_controller = substr($_controller, 0, strpos($_controller, 'Controller'));
-					$_parts['controller'] = strtolower($_controller);
+					$_parts['controller'] = $GLOBALS['controller'];
 				}
 				if ( !$_parts['action'] ) {
-					$_parts['action'] = 'index';
+					$_parts['action'] = $GLOBALS['action'];
 				}
 				if ( !$_parts['id'] ) {
 					$_parts['id'] = $_parts[0];
