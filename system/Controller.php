@@ -110,7 +110,7 @@ abstract class Controller
 					$_query[] = $_k."=".urlencode($_v);
 				}
 				if ( $_query ) {
-					$_query = '?'.implode('&', $_query);
+					$_query = '?'.implode('&amp;', $_query);
 				}
 				break;
 			default:
