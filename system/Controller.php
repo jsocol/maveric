@@ -122,7 +122,7 @@ abstract class Controller
 		$server = (stripos($_SERVER['SERVER_PROTOCOL'],'s')===false)?'http://':'https://';
 		$server .= $_SERVER['SERVER_NAME'];
 		
-		$_link = "<a href='{$server}{$base_url}{$_url}{$_query}' title='{$_text}'{$_confirm}>{$_text}</a>";
+		$_link = "<a href='{$server}{$base_url}/{$_url}{$_query}' title='{$_text}'{$_confirm}>{$_text}</a>";
 		
 		return $_link;
 	}
@@ -179,7 +179,7 @@ abstract class Controller
 		endswitch;
 		
 		if ( $_redirect ) {
-			header("Location: {$base_url}{$_redirect}{$_query}");
+			header("Location: {$base_url}/{$_redirect}{$_query}");
 		}
 	}
 
