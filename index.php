@@ -13,8 +13,8 @@ define('EXT', '.php');
 require_once PATH.'/config/env.php';
 
 // Set error-reporting level
-define('MAVERIC_ERROR_LEVEL', (MAVERIC_MODE == 'development' ? E_ALL ^ E_NOTICE : 0));
-error_reporting(MAVERIC_ERROR_LEVEL);
+if ( !defined('MAVERIC_PHP_ERROR_LEVEL') ) define('MAVERIC_PHP_ERROR_LEVEL', (MAVERIC_MODE == 'development' ? E_ALL ^ E_NOTICE : 0));
+error_reporting(MAVERIC_PHP_ERROR_LEVEL);
 
 require_once PATH_CONFIG.'db.php';
 require_once PATH_CONFIG.'routes.php';

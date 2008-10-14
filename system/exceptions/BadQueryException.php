@@ -6,6 +6,16 @@ class BadQueryException extends MavericException
 	{
 		parent::__construct($message, $code);
 	}
+
+	public function message ()
+	{
+		if ( MAVERIC_MODE == 'production' ) {
+			parent::message();
+		} else {
+			global $db;
+			return $db->error;
+		}
+	}
 }
 
 ?>
