@@ -43,24 +43,44 @@
  *
  * Failing to follow these conventions will cause
  * AutoloadExceptions and pretty much break your application.
+ *
+ * Changes:
+ * 14 October 2008
+ *  - Added support for include_path.
+ *  - Replaced preg_match with substr.
  */
 
+/**
+ * autoload the class file
+ *
+ * @author James Socol
+ * @param string $Class required
+ * @throws AutoloadException
+ */
 function __autoload ( $Class )
 {
-	if ( preg_match('/Controller$/', $Class) ) {
+	// Load Controllers from the controllers/ directory
+	if ( substr($Class,-10) == 'Controller' ) {
 		if ( file_exists(PATH_CONTROLLERS.$Class.EXT) ) {
 			include_once PATH_CONTROLLERS.$Class.EXT;
 		}
-	} elseif ( preg_match('/Helper$/', $Class) ) {
+	// Load Helpers from the helpers/ directory
+	} elseif ( substr($Class,-6) == 'Helper' ) {
 		if ( file_exists(PATH_HELPERS.$Class.EXT) ) {
 			include_once PATH_HELPERS.$Class.EXT;
 		}
-	} elseif ( preg_match('/Exception$/', $Class) ) {
+	// Load Exceptions from the system/exceptions/ directory
+	} elseif ( substr($Class,-9) == 'Exception' ) {
 		if ( file_exists(PATH_SYSTEM.'exceptions/'.$Class.EXT) ) {
 			include_once PATH_SYSTEM.'exceptions/'.$Class.EXT;
 		}
+	// Check the models/ directory first, then scan the whole
+	// include_path.
 	} elseif ( file_exists(PATH_MODELS.$Class.EXT) ) {
 		include_once PATH_MODELS.$Class.EXT;
+	} elseif ( file_exists($Class.EXT) ) {
+		include_once $Class.EXT;
+	// Couldn't find anything?
 	} else {
 		throw new AutoloadException($Class);
 	}

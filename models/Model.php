@@ -95,60 +95,197 @@
 
 abstract class Model
 {
-	public $id;
-
-	abstract protected function __construct();
-
-	abstract public static function find();
-	abstract public static function create();
+	// Keep track of which members are associated with 
+	// columns in the table
+	protected $_columns = array();
 	
-	abstract public function save();
-	abstract public function delete();
-}
+	// Table relationships
+	public $has_one = array();
+	public $has_many = array();
+	public $belongs_to = array();
+	public $has_and_belongs_to_many = array();
 
-/**
- * Function get_called_class()
- * 
- * Hack to add get_called_class() to PHP < 5.3
- */
-/**
- * Return called class name
- *
- * @author Michael Grenier
- * @param int $i_level optional
- * @return string
- */
-if ( !function_exists('get_called_class') ) {
-	function get_called_class ($i_level = 1)
+	/**
+	 * Retrieve row from database and set the columns
+	 * as the values of this object.
+	 *
+	 * @arg integer
+	 * @return Model
+	 */
+	protected function __construct ( $in_id = false )
 	{
-		$a_debug = debug_backtrace();
-		$a_called = array();
-		$a_called_function = $a_debug[$i_level]['function'];
-		for ($i = 1, $n = sizeof($a_debug); $i < $n; $i++)
-		{
-			if (in_array($a_debug[$i]['function'], array('eval')) || 
-				strpos($a_debug[$i]['function'], 'eval()') !== false)
-				continue;
-			if (in_array($a_debug[$i]['function'], array('__call', '__callStatic')))
-				$a_called_function = $a_debug[$i]['args'][0];
-			if ($a_debug[$i]['function'] == $a_called_function)
-				$a_called = $a_debug[$i];
+		// Need database access.
+		global $db;
+		if ( !$db ) throw new NoConnectionException;
+		
+		// What's the table name
+		$table = strtolower(pluralize(__CLASS__));
+		
+		// Select the row from the table
+		if ( is_int($in_id) || ctype_digit($in_id) ) {
+			$_sql = "SELECT * FROM $table WHERE id = '$in_id'";
+			if ( $_r = $db->query($_sql) ) {
+				if ( $_row = $_r->fetch_assoc() ) {
+					foreach ( $_row as $_column => $_value ):
+						$this->{$_column} = $_value;
+						$this->_columns[] = $_column;
+					endforeach;
+					
+					// Add in support for table relationships
+					
+					
+					return $this;
+				} else {
+					throw new NoRecordException;
+				}
+			} else {
+				throw new BadQueryException;
+			}
+		} else {
+			return $this;
 		}
-		if (isset($a_called['object']) && isset($a_called['class']))
-			return (string)$a_called['class'];
-		$i_line = (int)$a_called['line'] - 1;
-		$a_lines = explode("\n", file_get_contents($a_called['file']));
-		preg_match("#([a-zA-Z0-9_]+){$a_called['type']}
-					{$a_called['function']}( )*\(#", $a_lines[$i_line], $a_match);
-		unset($a_debug, $a_called, $a_called_function, $i_line, $a_lines);
-		if (sizeof($a_match) > 0)
-			$s_class = (string)trim($a_match[1]);
-		else
-			$s_class = (string)$a_called['class'];
-		if ($s_class == 'self')
-			return get_called_class($i_level + 2);
-		return $s_class;
 	}
+
+	/**
+	 * Build SQL query and execute to find rows in the
+	 * database and return objects
+	 *
+	 * @author James Socol
+	 * @param mixed
+	 * @return mixed
+	 */
+	public static function find ()
+	{
+		// We need to know the calling class and the
+		// table name
+		$Class = get_called_class();
+		$table = strtolower(pluralize($Class));
+		
+		// We require a database connection for this...
+		// Want to move the SQL generation into a more
+		// Agnostic DB wrapper
+		global $db;
+		if ( !$db ) throw new NoConnectionException();
+		
+		// Get the function arguments. There must be atleast
+		// one
+		$_args = func_get_args();
+		if ( !$_args[0] ) throw new NoArgumentException;
+		
+		// Start finding things
+		switch ( gettype($_args[0]) ):
+			// If the first argument is an integer, just
+			// return a new object
+			case 'integer':
+				return new $Class($_args[0]);
+				break;
+			case 'string':
+				if ( ctype_digit($_args[0]) ) {
+					return new $Class($_args[0]);
+				}
+				
+				// If the first argument is not an integer, 
+				// it must be either 'first' or 'all'
+				switch ( $_args[0] ):
+					case 'first':
+						$_limit = ' LIMIT 0,1';
+						break;
+					case 'all':
+						$_limit = '';
+						break;
+				endswitch;
+				
+				// If there is a second argument, it's either
+				// A string (body of WHERE clause) or an array
+				// (conditions for WHERE clause)
+				if ( $_args[1] ) {
+					$_search = $_args[1];
+				}
+				break;
+		endswitch;
+		
+		// Start building the sql
+		$_sql = "SELECT id FROM $table ";
+		
+		// Build the WHERE clause
+		if ( $_search ) {
+			switch ( gettype($_search) ):
+				// If $_search is a string, treat it as a literal,
+				// the body of the WHERE clause
+				case 'string':
+					$_where = $_search;
+					break;
+				// If $_search is an array, the key=>value pairs are
+				// considered column=>value pairs, compared with 'LIKE' if
+				// the value contains'%', and with '=' otherwise. Multiple
+				// conditions are joined with AND.
+				case 'array':
+					$_conds = array();
+					foreach($_search as $col => $value):
+						$_conds[] = preg_replace('/[^\w\._]+/','',$col).((strpos($value,'%')!==false)?' LIKE ':' = ')."'".$db->real_escape_string($value)."'";
+					endforeach;
+					$_where = implode(' AND ', $_conds);
+					break;
+			endswitch;
+		}
+		
+		// build the whole query
+		if ( $_where ) $_where = 'WHERE '. $_where;
+		$_sql .= $_where . $_limit;
+		
+		// Do the query
+		if ( !$_r = $db->query($_sql) ) throw new BadQueryException;
+		
+		// If we're returning 'all', we get an array of objects (which
+		// may be empty, one, or multiple). If we're returning 'first',
+		// we get a single object.
+		switch ( $_args[0] ):
+			case 'all':
+				$_rows = array();
+				while ( $_id = $_r->fetch_assoc() ):
+					$_rows[] = new $Class($_id['id']);
+				endwhile;
+				return $_tags;
+				break;
+			case 'first':
+			default:
+				if ( $_id = $_r->fetch_assoc() )
+					return new $Class($_id['id']);
+				break;
+		endswitch;
+		
+		// If there's nothing else left to do... return
+		// NULL.
+		return NULL;
+	}
+	
+	/**
+	 * factory to create an empty object
+	 *
+	 * @author James Socol
+	 * @return Model
+	 */
+	public static function create ()
+	{
+		// Get the calling class
+		$Class = get_called_class();
+		return new $Class;
+	}
+	
+	/**
+	 * write the current object to the database
+	 *
+	 * @author James Socol
+	 * @return Model
+	 */
+	abstract public function save();
+	
+	/**
+	 * delete the associated row from the database
+	 *
+	 * @author James Socol
+	 */
+	abstract public function delete();
 }
 
 ?>

@@ -9,6 +9,7 @@
 
 // Set up the Maveric environment.
 define('PATH', dirname(__FILE__));
+ini_set('include_path', ini_get('include_path').';'.PATH);
 define('EXT', '.php');
 require_once PATH.'/config/env.php';
 
@@ -16,19 +17,22 @@ require_once PATH.'/config/env.php';
 if ( !defined('MAVERIC_PHP_ERROR_LEVEL') ) define('MAVERIC_PHP_ERROR_LEVEL', (MAVERIC_MODE == 'development' ? E_ALL ^ E_NOTICE : 0));
 error_reporting(MAVERIC_PHP_ERROR_LEVEL);
 
+// Get the rest of the configuration values.
 require_once PATH_CONFIG.'db.php';
 require_once PATH_CONFIG.'routes.php';
 
 // Get the version number
 require_once PATH_SYSTEM.'Version.php';
 
-// Include the debugging functions
+// Include the system internals
 require_once PATH_SYSTEM.'Debug.php';
+require_once PATH_SYSTEM.'Inflect.php';
+require_once PATH_SYSTEM.'Functions.php';
 
 // Set up autoloading
 require_once PATH_SYSTEM.'AutoLoader.php';
 
-// Set up error-handling
+// Set up exception- and error-handling
 set_exception_handler(array('MavericException', 'handler'));
 
 // Load the things that can't be autoloaded
