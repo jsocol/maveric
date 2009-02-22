@@ -23,12 +23,31 @@ define('MAVERIC_MODE', 'development');
 define('MAVERIC_LOG_TYPE', 'none');
 
 /**
+ * Maveric Log File (NYI)
+ * 
+ * Where to log, if MAVERIC_LOG_TYPE is set to 'file'.
+ * PHP must be able to write to this file.
+ */
+define('MAVERIC_LOG_FILE', '/var/log/maveric');
+
+/**
  * Maveric Log Level (NYI)
  *
  * When to write to the Maveric log. Possible 
- * values are 'message', 'debug', 'warn', and 'error'.
+ * values are 'none', 'message', 'debug', 'warn', and 'error'.
  */
 define('MAVERIC_LOG_LEVEL', 'debug');
+
+/**
+ * PHP Error Reporting Level
+ *
+ * Uncomment this line to specify a custom
+ * value for PHP's error_reporting() function.
+ * The default is '0' when MAVERIC_MODE is
+ * 'production', and E_ALL ^ E_NOTICE when
+ * it's 'development'.
+ */
+//define('MAVERIC_PHP_ERROR_LEVEL', E_ALL ^ E_NOTICE);
 
 /**
  * PHP INI Settings
@@ -54,4 +73,4 @@ define('PATH_HELPERS',     PATH.'/helpers/');
 define('PATH_MODELS',      PATH.'/models/');
 define('PATH_VIEWS',       PATH.'/views/');
 
-?>
+
