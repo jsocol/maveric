@@ -14,22 +14,8 @@
  * Where the "params" are defined in the routes.php file.
  */
 
-/**
- * Maps URLs to controllers and actions.
- * 
- * Use Router::map() to create a new route. See config/routes.php
- * for examples and help.
- *
- * @author James Socol
- * @since 0.1
- * @package Maveric
- */
 class Router
 {
-	/**
-	 * Shortcuts allowed in routes.
-	 * @since 0.1
-	 */
 	public static $shorthand = array(
 		':controller' => '([a-zA-Z_][a-zA-Z0-9_]+)',
 		':action'     => '([a-zA-Z_][a-zA-Z0-9_]+)',
@@ -37,49 +23,60 @@ class Router
 		':format'     => '([\w]+)'
 	);
 
-	/**
-	 * Mapped routes.
-	 * @since 0.2
-	 */
-	public static $routes = array();
-	
-	/**
-	 * Creates a new route.
-	 * 
-	 * @since 0.2
-	 * @param string $route the new route to map
-	 * @param array $options the details of this new route (optional)
-	 */
- 	public static function map ( $route, Array $options = NULL)
- 	{
- 		Router::$routes[] = array($route,$options);
- 	}
-
-	/**
-	 * Determines a route from a URL.
-	 * 
-	 * This method is expensive. It is intended only to be
-	 * called at the start of the request.
-	 * 
-	 * @param string $url the URL to interpret
-	 * @return ???
-	 */
-	public static function find ( $url )
+	public static function find ( $route )
 	{
-		// Debug the found URL
-		Log::log("Routing URL: $url", MAVERIC_E_MESSAGE);
+		global $routes, $base_url;
+		$route = preg_replace('@^'.$base_url.'\/?@', '', $route, 1);
 		
-		// Get the parts of the current URL:
-		$current = explode('/',$url);
-		
-		// Loop through the defined routes
-		foreach ( Router::$routes as $route ) {
-			// Look at the individual parts
-			$location = explode('/',$route[0]);
+		foreach ( $routes as $_url => $_route ) {
+			$_map = array_shift($_route);
 			
-			foreach ($location as $part) {
-				
+			// If this is the default, just do it.
+			// _default should always come last and be a static map.
+			if ( $_url == '_default' ) {
+				$_map = explode('/', $_map);
+				$controller = ucfirst($_map[0]).'Controller';
+				if ( !class_exists($controller) ) throw new NoControllerException($controller);
+				if ( !in_array($_map[1], get_class_methods($controller)) ) throw new NoActionException($_map[1]);
+				return array($_map, array());
 			}
+
+			// Substitute in the shorthand notations.
+			$_url = str_replace(array_keys(self::$shorthand),
+				array_values(self::$shorthand),
+				$_url);
+
+			if ( !preg_match('@^'.$_url.'$@', $route, $_values) ) {
+				continue;
+			}
+			
+			array_shift($_values);
+			
+			$_map = explode('/', $_map);
+			
+			foreach ( $_map as &$_p ) {
+				if ( preg_match('#\$(\d+)#', $_p, $_v) ) {
+					$_p = str_replace('$'.$_v[1], $_values[$_v[1]-1], $_p);
+					unset($_values[$_v[1]-1]);
+				}
+			}
+			
+			if ( !$_map[1] ) $_map[1] = 'index';
+			
+			$controller = ucfirst($_map[0]).'Controller';
+			
+			if ( !class_exists($controller) ) throw new NoControllerException($controller);
+			
+			if ( !in_array($_map[1], get_class_methods($controller)) ) throw new NoActionException($_map[1]);
+
+			$_values = array_values($_values);
+			$_maxk = count($_route);
+			$_params = array();
+			for ( $j = 0; $j < $_maxk; $j++ ) {
+				$_params[$_route[$j]] =  $_values[$j];
+			}
+			
+			return array($_map, $_params);
 		}
 	}
 }
