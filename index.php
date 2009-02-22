@@ -9,6 +9,8 @@
 
 // Set up the Maveric environment.
 define('PATH', dirname(__FILE__));
+define('DS', DIRECTORY_SEPARATOR);
+
 ini_set('include_path', ini_get('include_path').';'.PATH);
 require_once PATH.'/config/env.php';
 

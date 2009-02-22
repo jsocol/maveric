@@ -65,12 +65,15 @@ ini_set('date.timezone', 'GMT');
  * For additional security, you can move everything
  * but "index.php", ".htaccess" and "/config/env.php"
  * out of the web root.
+ * 
+ * You can use the constant DS for the directory 
+ * separator.
  */
-define('PATH_CONFIG',      PATH.'/config/');
-define('PATH_SYSTEM',      PATH.'/system/');
-define('PATH_CONTROLLERS', PATH.'/controllers/');
-define('PATH_HELPERS',     PATH.'/helpers/');
-define('PATH_MODELS',      PATH.'/models/');
-define('PATH_VIEWS',       PATH.'/views/');
+define('PATH_CONFIG',      PATH.DS.'config'.DS);
+define('PATH_SYSTEM',      PATH.DS.'system'.DS);
+define('PATH_CONTROLLERS', PATH.DS.'controllers'.DS);
+define('PATH_HELPERS',     PATH.DS.'helpers'.DS);
+define('PATH_MODELS',      PATH.DS.'models'.DS);
+define('PATH_VIEWS',       PATH.DS.'views'.DS);
 
 
