@@ -1,6 +1,6 @@
 <?php
 /**
- * The Maveric Debugger
+ * The Maveric Logger
  * 
  * @since 0.2
  * @author James Socol <me@jamessocol.com>
@@ -10,7 +10,7 @@
  */
 
 /**
- * The Maveric Debugging/Logging Class
+ * The Maveric Logging/Debugging Class
  * 
  * Handles logging messages and debugging features.
  * 
@@ -20,7 +20,7 @@
  * @package Maveric
  * @license MIT License
  */
-final class Debug
+final class Log
 {
 	/**
 	 * Flag whether a connection to the logging facility has
@@ -111,4 +111,24 @@ final class Debug
 			default:
  		} // switch MAVERIC_LOG_TYPE
  	} // function log
+ 	
+ 	/**
+ 	 * Write a message to a file.
+ 	 * 
+ 	 * Outputs a message to a newline of a file. Swallows errors.
+ 	 * Only operates when MAVERIC_MODE is 'development'.
+ 	 * 
+ 	 * @param string $message The message to write.
+ 	 * @param string $file The file to write to, relative to PATH.
+ 	 */
+	public static function trace ( $message, $file )
+	{
+		// If we're not in development mode, go away
+		if ( MAVERIC_MODE != 'development' ) return;
+		
+		// Write the message
+		$fp = fopen(PATH.DS.$file,'a');
+		fwrite($message);
+		fclose($fp);
+	}
 }

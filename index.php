@@ -31,7 +31,7 @@ require_once PATH_SYSTEM.'Constants.php';
 require_once PATH_SYSTEM.'Version.php';
 
 // Include the debugging functions
-require_once PATH_SYSTEM.'Debug.php';
+require_once PATH_SYSTEM.'Log.php';
 
 // Set up autoloading
 require_once PATH_SYSTEM.'AutoLoader.php';
