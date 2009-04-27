@@ -37,6 +37,27 @@
 //   Added rule for potato -> potatoes
 //   Added rule for *us -> *uses
 
+/**
+ * Global accessor functions
+ */
+function pluralize ($str)
+{
+	return Inflect::pluralize($str);
+}
+
+function singularize ($str)
+{
+	return Inflect::singularize($str);
+}
+
+function pluralize_if ($str,$count)
+{
+	return Inflect::pluralize_if($count,$str);
+}
+
+/**
+ * Inflect class definition
+ */
 class Inflect
 {
     static $plural = array(
@@ -173,5 +194,3 @@ class Inflect
             return $count . " " . self::pluralize($string);
     }
 }
-
-?>
