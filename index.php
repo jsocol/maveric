@@ -27,7 +27,6 @@ require_once PATH_SYSTEM.'Version.php';
 // Include the system internals
 require_once PATH_SYSTEM.'Debug.php';
 require_once PATH_SYSTEM.'Inflect.php';
-require_once PATH_SYSTEM.'Functions.php';
 
 // Set up autoloading
 require_once PATH_SYSTEM.'AutoLoader.php';

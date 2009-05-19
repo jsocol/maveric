@@ -47,7 +47,7 @@ class Snippet extends Model
 	
 	protected $has_many = array(
 		'comments',
-		'children'=>array('model'=>'snippet','field'=>'parent_id')
+		'children'=>array('model'=>'snippet','foreign_key'=>'parent_id')
 	);
 }
 
@@ -59,15 +59,31 @@ class Comment extends Model
 	);
 }
 
+
+
+
+// Setting Model
+class Setting extends Model
+{
+	public function save ()
+	{
+		
+		$this->value = serialize($this->value);
+		
+		parent::save();
+		
+		$this->value = unserialize($this->value);
+	}
+}
+
+
+
 ////////////////////////////////////////////
 
-$sn = new Snippet(1);
+$sn1 = new Snippet(12);
+
+echo $sn1->user->comments[0]->body;
+//$set->value = "Local Computer";
+//$set->save();
 
 ?>
-<h1><?php echo $sn->name; ?> by <?php echo $sn->user->nice_name(); ?></h1>
-
-<div><pre><?php echo $sn->body; ?></pre></div>
-
-<?php foreach($sn->comments as $c): ?>
-<div><?php echo $c->body; ?></div>
-<?php endforeach; ?>

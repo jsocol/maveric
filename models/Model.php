@@ -1,6 +1,6 @@
 <?php
 /**
- * Abstract Model Class
+ * Model Base Class
  *
  * Base class for all user Models.
  * 
@@ -17,6 +17,10 @@ class Model
 	 * Static list of table fields to prevent re-lookups.
 	 */
  	private static $fields = array();
+	
+	private static $tables = array();
+	
+	private static $loaded = array();
 	
 	/**
 	 * Name of the table. (Will be infered if not set)
@@ -58,13 +62,19 @@ class Model
  	protected $has_and_belongs_to_many = array();
 
 	/**
-	 * Constructor
+	 * The constructor sets up the initial list of fields and
+	 * prepares the object. If an argument is passed, the 
+	 * constructor passes it to {@see find()}
+	 * 
+	 * @param mixed optional
 	 */
 	public function __construct ($find = false)
 	{
 		// If the name of the table is not set, set it
 		if (false===$this->table) {
-			$this->table = strtolower(pluralize(get_class($this)));
+			if(!($this->table = self::$tables[get_class($this)])){
+				self::$tables[get_class($this)] = $this->table = strtolower(pluralize(get_class($this)));
+			}
 		}
 		
 		global $db;
@@ -94,11 +104,21 @@ class Model
 		return $this;
 	}
 
-	public function find()
+	/**
+	 * Find a row in the database based on search criteria, populating
+	 * the current instance with the data it finds.
+	 * 
+	 * If passed a numeric string or integer, will assume the
+	 * argument is an 'id'. If passed an array, will assume the
+	 * key=>value pairs correspond with the column=>value names.
+	 * Multiple columns are combined with AND.
+	 * 
+	 * @param mixed search
+	 */
+	public function find($arg)
 	{
 		global $db;
-		$arg = func_get_arg(0);
-		
+				
 		// if it's an array, treat as key-value pairs
 		if ( is_array($arg) ) {
 			$where = array();
@@ -124,12 +144,37 @@ class Model
 		return $this;
 	}
 	
-	public function find_all ( Array $conds = null, Array $order = null )
+	/**
+	 * Returns a (possibly empty) array of objects meeting
+	 * the search conditions.
+	 * 
+	 * The first parameter is a (possibly null/empty) array of
+	 * search conditions, where key=>value pairs correspond to
+	 * column=>value pairs in the table. Multiple conditions are
+	 * joined with AND.
+	 * 
+	 * The second parameter is an array of ORDER BY fields. The
+	 * default ordering is ASC, but can be specified by using
+	 * the column as a key, and ASC or DESC as the value.
+	 * 
+	 * The third parameter is a limit, which is either a number
+	 * or numeric string, or two comma-separated numbers (ie: 5
+	 * or '4,10').
+	 * 
+	 * All three parameters are optional.
+	 * 
+	 * @param array $conds search conditions
+	 * @param array $order order by clause
+	 * @param mixed $limit
+	 * @return array
+	 */
+	public function find_all ( Array $conds = null, Array $order = null, $limit = false )
 	{
 		global $db;
 		$where = array();
 		if($conds) {
 			foreach($conds as $f=>$v){
+				$v = $db->real_escape_string($v);
 				if ('NULL'==$v){
 					$where[] = "$f is NULL";
 				} else {
@@ -156,13 +201,14 @@ class Model
 			$query .= " WHERE ".implode(' AND ',$where);
 		if($orderby)
 			$query .= " ORDER BY ".implode(', ', $orderby);
+		if($limit)
+			$query .= " LIMIT $limit";
 		
 		$res = $db->query($query);
 		
 		$class = get_class($this);
 		
-		echo $db->error;
-		
+		if(!$db->error)
 		while($o = $res->fetch_assoc()){
 			$return[] = new $class($o['id']);
 		}
@@ -170,6 +216,9 @@ class Model
 		return $return;
 	}
 	
+	/**
+	 * Save the current object into the database.
+	 */
 	public function save()
 	{
 		global $db;
@@ -178,6 +227,12 @@ class Model
 			
 			if (isset($this->initial['created'])&&0==$this->created) {
 				$this->created = time();
+			}else if(0!=$this->initial['created']){
+				$this->created = $this->initial['created'];
+			}
+			
+			if(isset($this->initial['updated'])){
+				$this->updated = time();
 			}
 			
 			if ( $this->initial['id'] ) {
@@ -203,7 +258,7 @@ class Model
 						$new[$k] = false;
 					}
 				} else {
-					$data[$k] = $db->real_escape_string($this->{$k});
+					$data[$k] = $this->{$k};
 					$new[$k] = $this->{$k};
 				}
 				
@@ -219,7 +274,6 @@ class Model
 			}
 			
 			$db->query("INSERT INTO {$this->table} $cols VALUES $vals $update;");
-			//return "INSERT INTO {$this->table} $cols VALUES $vals $update;";
 			
 			if(!$this->id){
 				$this->id = $db->insert_id;
@@ -256,12 +310,29 @@ class Model
 				
 				if(!$join){
 					$p = array(pluralize($me),pluralize($them));
+					sort($p);
+					$join = "{$p[0]}_{$p[1]}";
+				}
+				
+				if(!$key){
+					$key = $me.'_id';
+				}
+				
+				if(!$fkey) {
+					$fkey = $them.'_id';
 				}
 				
 				$ids = array();
 				foreach($col as $o){
-					$ids[] = $o->id;
+					$ids[] = "({$this->id},{$o->id})";
 				}
+				
+				// erase the current list
+				$db->query("DELETE FROM `{$join}` WHERE `$key` = {$this->id};");
+				
+				// set the new list
+				$db->query("INSERT IGNORE INTO `{$join}` (`$key`,`$fkey`) VALUES "
+						  .implode(',',$ids).";");
 			}
 		}
 	}
@@ -275,8 +346,122 @@ class Model
 		}
 	}
 	
-	public function delete() {}
+	/**
+	 * Permanently delete a row from the database, and clear this
+	 * object.
+	 * 
+	 * Deletes dependent rows (anything that belongs_to the current
+	 * object) unless the 'dependent' property of the association
+	 * is set to 'ignore'. That is, the has_many and has_one arrays
+	 * should have dependent => ignore set.
+	 */
+	public function delete ()
+	{
+		// only delete if this row is saved
+		if($this->id) {
+			
+			global $db;
+
+			foreach($this->has_one as $k => $v) {
+				if(is_int($k)) {
+					$o = $this->{$v};
+					$o->delete();
+				} else {
+					if($v['dependent']!='ignore') {
+						$o = $this->{$k};
+						$o->delete();
+					}else{
+						$me = ($v['foreign_key'])?$v['foreign_key']:strtolower(get_class($this)).'_id';
+						$o = $this->{$k};
+						$o->{$me} = 'NULL';
+						$o->save();
+					}
+				}
+			}
+			
+			foreach($this->has_many as $k => $v) {
+				if(is_int($k)) {
+					foreach ($this->{$v} as $o) {
+						$o->delete();
+					}
+				} else {
+					if($v['dependent']!='ignore') {
+						foreach ($this->{$k} as $o) {
+							$o->delete();
+						}
+					}else{
+						$me = ($v['foreign_key'])?$v['foreign_key']:strtolower(get_class($this)).'_id';
+						foreach($this->{$k} as $o) {
+							$o->{$me} = 'NULL';
+							$o->save();
+						}
+					}
+				}
+			}
+			
+			// Do the deleting for has_and_belongs_to_many collections
+			foreach($this->has_and_belongs_to_many as $f=>$k)
+			{
+				if(is_int($f)){
+					$col = $this->{$k};
+					$them = singularize($k);
+				}else{
+					$col = $this->{$f};
+					$opts = $this->has_and_belongs_to_many[$f];
+					$them = ($opts['model'])?$opts['model']:singularize($f);
+					
+					if($opts['join']){
+						$join = $opts['join'];
+					}
+					if($opts['foreign_key']){
+						$fkey = $opts['foreign_key'];
+					}
+					if($opts['key']){
+						$key = $opts['key'];
+					}
+				}
+				
+				$me = strtolower(get_class($this));
+				
+				
+				if(!$join){
+					$p = array(pluralize($me),pluralize($them));
+					sort($p);
+					$join = "{$p[0]}_{$p[1]}";
+				}
+				
+				if(!$key){
+					$key = $me.'_id';
+				}
+				
+				if(!$fkey) {
+					$fkey = $them.'_id';
+				}
+				
+				$ids = array();
+				foreach($col as $o){
+					$ids[] = "({$this->id},{$o->id})";
+				}
+				
+				// erase the current list
+				$db->query("DELETE FROM `{$join}` WHERE `$key` = {$this->id};");
+			}
+			
+			$db->query("DELETE FROM `{$this->table}` WHERE id = {$this->id};");
+			
+			foreach($this->initial as $k => $v) {
+				unset($this->$k, $this->initial[$k]);
+			}
+		}
+	}
 	
+	/**
+	 * Overload get method
+	 * 
+	 * Used to lazily retrieve the associated models through the 
+	 * has_one, has_many, belongs_to, and has_and_belongs_to_many
+	 * relationships.
+	 */
 	public function __get ($_k)
 	{
 		// Special case for is_saved
@@ -304,19 +489,26 @@ class Model
 		// If it's in the belongs_to array
 		if(in_array($_k, $this->belongs_to)||array_key_exists($_k,$this->belongs_to))
 		{
-			if(!$this->{$_k."_id"}){
-				return null;
-			}
 			// If it's a simple relationship
 			if(in_array($_k,$this->belongs_to)){
+				$fkey = "{$_k}_id";
 				$class = ucfirst($_k);
-				$this->{$_k} = new $class($this->{$_k."_id"});
-				return $this->{$_k};
+				if(!$this->$fkey){
+					return null;
+				}else{
+					$this->{$_k} = new $class($this->{$fkey});
+					return $this->{$_k};
+				}
 			} else {
 				$opts = $this->belongs_to[$_k];
-				$class = ucfirst($opts['model']);
-				$this->{$_k} = new $class($this->{$_k."_id"});
-				return $this->{$_k};
+				$class = ($opts['model'])?ucfirst($opts['model']):ucfirst($_k);
+				$fkey = ($opts['foreign_key'])?$opts['foreign_key']:$_k.'_id';
+				if(!$this->$fkey){
+					return null;
+				}else{
+					$this->{$_k} = new $class($this->{$fkey});
+					return $this->{$_k};
+				}
 			}
 		}
 		
@@ -332,8 +524,8 @@ class Model
 		{
 			$opts = $this->has_one[$_k];
 			
-			$class = ucfirst($opts['model']);
-			$field = ($opts['field'])?$opts['field']:$_k.'_id';
+			$class = $opts['model']?ucfirst($opts['model']):ucfirst($_k);
+			$field = ($opts['foreign_key'])?$opts['foreign_key']:$_k.'_id';
 			
 			$this->{$_k} = new $class(array($field=>$this->id));
 			return $this->{$_k};
@@ -353,8 +545,8 @@ class Model
 		{
 			$opts = $this->has_many[$_k];
 			
-			$class = ucfirst($opts['model']);
-			$field = ($opts['field'])?$opts['field']:$_k.'_id';
+			$class = $opts['model']?ucfirst($opts['model']):ucfirst(singularize($_k));
+			$field = ($opts['foreign_key'])?$opts['foreign_key']:strtolower(get_class($this)).'_id';
 			
 			$t = new $class;
 			$this->{$_k} = $t->find_all(array($field=>$this->id));
@@ -411,7 +603,7 @@ class Model
 			if($opts['through']){
 				$join = $opts['through'];
 			}else{
-				$p = array(pluralize($them),pluralize($me));
+				$p = array($_k,pluralize($me));
 				sort($p);
 				$join = "{$p[0]}_{$p[1]}";
 			}
