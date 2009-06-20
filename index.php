@@ -15,12 +15,14 @@ ini_set('include_path', ini_get('include_path').';'.PATH);
 require_once PATH.'/config/env.php';
 
 // Set error-reporting level
+if ( !defined('MAVERIC_PHP_ERROR_LEVEL') ) define('MAVERIC_PHP_ERROR_LEVEL', (MAVERIC_MODE == 'development' ? E_ALL ^ E_NOTICE : 0));
 if ( !defined('MAVERIC_PHP_ERROR_LEVEL') ) {
 	define('MAVERIC_PHP_ERROR_LEVEL', (MAVERIC_MODE == 'development' ? E_ALL ^ E_NOTICE
 																	 : 0));
 }
 
 error_reporting(MAVERIC_PHP_ERROR_LEVEL);
+
 
 // Get the rest of the configuration info
 require_once PATH_CONFIG.'db.php';
@@ -33,12 +35,15 @@ require_once PATH_SYSTEM.'Constants.php';
 require_once PATH_SYSTEM.'Version.php';
 
 // Include the debugging functions
-require_once PATH_SYSTEM.'Log.php';
+require_once PATH_SYSTEM.'Logger.php';
+
+// Include the Inflector
+require_once PATH_SYSTEM.'Inflect.php';
 
 // Set up autoloading
 require_once PATH_SYSTEM.'AutoLoader.php';
 
-// Set up error-handling
+// Set up exception- and error-handling
 set_exception_handler(array('MavericException', 'handler'));
 
 // Load the things that can't be autoloaded
@@ -84,5 +89,6 @@ $Controller->$action();
 
 // Output to the browser
 $Controller->output();
+
 
 
