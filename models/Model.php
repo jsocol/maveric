@@ -547,9 +547,10 @@ class Model
 			
 			$class = $opts['model']?ucfirst($opts['model']):ucfirst(singularize($_k));
 			$field = ($opts['foreign_key'])?$opts['foreign_key']:strtolower(get_class($this)).'_id';
+			$order = ($opts['sort'])?$opts['sort']:array();
 			
 			$t = new $class;
-			$this->{$_k} = $t->find_all(array($field=>$this->id));
+			$this->{$_k} = $t->find_all(array($field=>$this->id),$order);
 			
 			return $this->{$_k};
 		}
