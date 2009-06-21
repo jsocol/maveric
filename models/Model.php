@@ -622,4 +622,86 @@ class Model
 			return $this->{$_k};
 		}
 	}
+
+	/**
+	 * Outputs the current object as an associative array.
+	 * 
+	 * The only parameter is the depth, or how many generations
+	 * to recurse through the family tree. It defaults to 0.
+	 * 
+	 * @param int $depth 0. How far to branch through relationships
+	 * @return array An array representation of the object.
+	 */
+	public function to_array($depth = 0)
+	{
+		$data = array();
+		foreach($this->initial as $k => $v)
+		{
+			$data[$k] = $this->{$k};
+		}
+		
+		if($depth>0) {
+			foreach($this->belongs_to as $k => $v)
+			{
+				if(is_int($k)){
+					$key = $v;
+				} else {
+					$key = $k;
+				}
+				$data[$key] = $this->{$key}->to_array($depth-1);
+			}
+
+			foreach($this->has_one as $k => $v)
+			{
+				if(is_int($k)){
+					$key = $v;
+				} else {
+					$key = $k;
+				}
+				$data[$key] = $this->{$key}->to_array($depth-1);
+			}
+			
+			foreach($this->has_many as $k => $v)
+			{
+				if(is_int($k)){
+					$key = $v;
+				} else {
+					$key = $k;
+				}
+				
+				foreach($this->{$key} as $obj){
+					$data[$key][] = $obj->to_array($depth-1);
+				}
+			}
+			
+			foreach($this->has_and_belongs_to_many as $k => $v)
+			{
+				if(is_int($k)){
+					$key = $v;
+				} else {
+					$key = $k;
+				}
+				
+				foreach($this->{$key} as $obj){
+					$data[$key][] = $obj->to_array($depth-1);
+				}
+			}
+		}
+		
+		return $data;
+	}
+	
+	/**
+	 * Outputs a JSON representation of the current object.
+	 * 
+	 * For a description of the $depth argument, see {@see to_array()}.
+	 * 
+	 * @param int $depth 0. How far to branch through table relationships.
+	 * @return string A JSON representation of the object.
+	 */
+	public function to_JSON ( $depth = 0 )
+	{
+		return json_encode($this->to_array($depth));
+	}
+
 }
