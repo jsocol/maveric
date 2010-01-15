@@ -1,7 +1,0 @@
-## SECURITY FOR MAVERIC ##
-Options -Indexes
-<Files "*.php">
-Order allow,deny
-Deny from all
-</Files>
-## END SECURITY FOR MAVERIC ##
